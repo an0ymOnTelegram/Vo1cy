@@ -66,8 +66,25 @@ final class AbortFlag {
         check(try !download(model(true), name: "cancelled-during-second-file", cancelDuring: true))
         try FileManager.default.removeItem(at: serverRoot.appendingPathComponent("vocab"))
         check(try !download(model(true), name: "incomplete"))
+        // Renamed, mismatched, or corrupt imports cannot enable another model.
+        try model().validateFile(serverRoot.appendingPathComponent("single-Q8_0.gguf"))
+        do {
+            try model(hash: String(repeating: "0", count: 64)).validateFile(serverRoot.appendingPathComponent("single-Q8_0.gguf"))
+            preconditionFailure("Invalid import accepted")
+        } catch {}
+        do {
+            try model().validateFile(serverRoot.appendingPathComponent("encoder"))
+            preconditionFailure("Directory import accepted")
+        } catch {}
+        let ultraURL = base.appendingPathComponent(CatalogModel.ultra.filename)
+        try a.write(to: ultraURL)
+        precondition(CatalogModel.preferredPath(previous: ultraURL.path, installed: []) == ultraURL.path)
+        precondition(CatalogModel.preferredPath(previous: "/example/legacy.gguf", installed: [ultraURL]) == ultraURL.path)
+        precondition(CatalogModel.preferredPath(previous: "/example/legacy.gguf", installed: []) == "")
+        precondition(CatalogModel.preferredPath(previous: "", installed: [ultraURL]) == ultraURL.path)
+        precondition(CatalogModel.preferredPath(previous: "/missing/" + CatalogModel.ultra.filename, installed: []) == "")
         let catalog = CatalogModel.all
-        precondition(Set(catalog.map(\.id)).count == 5)
+        precondition(catalog.map(\.id) == ["parakeet-ultra"])
         precondition(Set(ModelAssessment.byID.keys) == Set(catalog.map(\.id)))
         precondition(catalog.contains { $0.id == ModelAssessment.recommendedID && $0.available })
         for entry in catalog {

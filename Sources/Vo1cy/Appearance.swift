@@ -107,3 +107,22 @@ struct CompactWindow: NSViewRepresentable {
         }
     }
 }
+
+/// Plain external links: no embedded web content, tracking, or background requests.
+struct CommunityLinks: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Link(destination: URL(string: "https://t.me/an0ym")!) {
+                Label("@an0ym", systemImage: "paperplane")
+            }.help("Open @an0ym on Telegram").accessibilityLabel("Creator on Telegram: @an0ym")
+            Link(destination: URL(string: "https://t.me/jailbreakall")!) {
+                Label("Group", systemImage: "person.2")
+            }.help("Join the Telegram community").accessibilityLabel("Join the Telegram group")
+        }
+        .font(.system(size: 9, weight: .medium))
+        .foregroundStyle(Vo1cyStyle.accent.opacity(0.85))
+        .buttonStyle(.plain)
+        .lineLimit(1)
+        .fixedSize()
+    }
+}

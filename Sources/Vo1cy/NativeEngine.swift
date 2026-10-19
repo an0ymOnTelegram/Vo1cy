@@ -33,7 +33,6 @@ final class AbortFlag {
 /// All native model calls, including destruction, are confined to this queue.
 final class NativeEngine {
     private let queue = DispatchQueue(label: "app.vo1cy.inference", qos: .userInitiated)
-    private var redux: ReduxEngine?
     private var session: OpaquePointer?
     private var vadModel: OpaquePointer?
     private var vadSession: OpaquePointer?
@@ -68,27 +67,18 @@ final class NativeEngine {
         try await perform {
             _ = Self.initialized
             let key = path + (cpu ? "|cpu" : "|auto")
-            if self.loadedKey == key, (self.session != nil || self.redux != nil) { return self.caps }
+            if self.loadedKey == key, self.session != nil { return self.caps }
             self.release()
             guard FileManager.default.fileExists(atPath: path) else {
                 throw EngineFailure(message: "Select or download a model first.")
+            }
+            guard URL(fileURLWithPath: path).lastPathComponent == CatalogModel.ultra.filename else {
+                throw EngineFailure(message: "Vo1cy uses Parakeet Ultra. Download or import it in Model settings.")
             }
             var params = transcribe_model_load_params()
             transcribe_model_load_params_init(&params)
             params.backend = cpu ? TRANSCRIBE_BACKEND_CPU : TRANSCRIBE_BACKEND_AUTO
             try self.loadVAD()
-            if URL(fileURLWithPath: path).pathExtension == "vo1cymodel" {
-                guard URL(fileURLWithPath: path).lastPathComponent == "parakeet-redux.vo1cymodel" else {
-                    self.release(); throw EngineFailure(message: "Unknown model package.")
-                }
-                do { self.redux = try ReduxEngine(directory: URL(fileURLWithPath: path), cpu: cpu) }
-                catch { self.release(); throw error }
-                self.caps = ModelCapabilities(languages: ReduxEngine.languages, autoLanguage: true,
-                    translation: false, streaming: false, maxSeconds: 600,
-                    backend: cpu ? "Core ML · CPU" : "Core ML · CPU/GPU")
-                self.loadedKey = key
-                return self.caps
-            }
             do { try self.check(transcribe_open(path, &params, nil, &self.session)) }
             catch { self.release(); throw error }
             var c = transcribe_capabilities(); transcribe_capabilities_init(&c)
@@ -120,7 +110,7 @@ final class NativeEngine {
         return try resolved.withCString { lang in
             try "en".withCString { english in
                 p.language = language == "auto" ? nil : lang
-                // Explicitly preserve the source language for Canary's multitask decoder.
+                // Preserve the source language.
                 p.target_language = translate ? english : p.language
                 return try body(&p)
             }
@@ -158,13 +148,6 @@ final class NativeEngine {
                 var vadResult = transcribe_vad_result(); transcribe_vad_result_init(&vadResult)
                 try self.check(transcribe_vad_get_result(self.vadSession, &vadResult))
                 guard vadResult.n_segments > 0 else { throw EngineFailure(message: "No speech detected.") }
-            }
-            if let redux = self.redux {
-                guard !translate else { throw EngineFailure(message: "This model does not support translation.") }
-                let text = try redux.transcribe(samples: samples, language: language, flag: flag)
-                let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1e6
-                // Redux emits no language identifier. Never invent one from a hint.
-                return Recognition(text: text, raw: text, language: "", milliseconds: elapsed + (voiceCheckedDuringCapture ? self.voiceGateMS : 0))
             }
             try self.withParams(language: language, translate: translate) { p in
                 try samples.withUnsafeBufferPointer { pcm in
@@ -254,7 +237,6 @@ final class NativeEngine {
     func unload() async { try? await perform { self.release() } }
     func shutdown() { queue.sync { release() } }
     private func release() {
-        redux?.shutdown(); redux = nil
         if let session { transcribe_session_free(session) }
         if let vadSession { transcribe_vad_session_free(vadSession) }
         if let vadModel { transcribe_model_free(vadModel) }

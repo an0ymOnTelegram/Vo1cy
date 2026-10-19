@@ -21,7 +21,7 @@ if CommandLine.arguments.contains("--download-model") {
 } else if CommandLine.arguments.contains("--transcribe") {
     let args = CommandLine.arguments
     guard let i = args.firstIndex(of: "--transcribe"), args.count > i + 3 else {
-        fputs("Usage: Vo1cy --transcribe model.gguf|model.vo1cymodel audio.wav de|en|auto [--stream] [--cpu]\n", stderr); exit(2)
+        fputs("Usage: Vo1cy --transcribe parakeet-ultra-Q8_0.gguf audio.wav de|en|auto [--stream] [--cpu]\n", stderr); exit(2)
     }
     Task {
         let engine = NativeEngine()

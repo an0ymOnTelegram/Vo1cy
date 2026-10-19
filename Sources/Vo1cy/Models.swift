@@ -29,13 +29,29 @@ struct CatalogModel: Identifiable {
         if #available(macOS 15, *) { return true }
         return false
     }
-    static let all: [CatalogModel] = [
-        .init(id: "canary-180m-flash", title: "Canary 180M Flash", detail: "Compact · English, German, French, Spanish · fixed language", revision: "8b01fc77ac169a0a05c5c0332bbfe54acf65c26f", hash: "f942ab746040b531a29ab78ca3afc8dc9564efd8e4c942b5541e53644be9c408", bytes: 218447648, license: "CC BY 4.0 · NVIDIA", modelCard: "https://huggingface.co/nvidia/canary-180m-flash"),
-        .init(id: "nemotron-3.5-asr-streaming-0.6b", title: "Nemotron 3.5 Streaming", detail: "Live transcription · automatic language detection", revision: "53ce288f69326b415aeef030cfcb02a08a8096dd", hash: "b94545b313b3223fda7b2857a52681da813935c2127643d1e9ff0c23d988089c", bytes: 751094240, license: "OpenMDW 1.1 · NVIDIA", modelCard: "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b"),
-        .init(id: "parakeet-ultra", title: "Parakeet Ultra", detail: "25 languages · recognition after recording · Metal", revision: "a1539be1b849ea7463b88343e5277b373d0c4ea9", hash: "007a59761e9258779f189df396b50d12b83bb5b79e66df4b955c230d2f2a0a59", bytes: 740363168, license: "CC BY 4.0 · Moondream / NVIDIA", modelCard: "https://huggingface.co/moondream/parakeet-ultra"),
-        .init(id: "parakeet-redux", title: "Parakeet Redux", detail: "Small download · 25 languages · recognition after recording · macOS 15+", revision: ReduxManifest.revision, hash: "", bytes: ReduxManifest.files.reduce(0) { $0 + $1.bytes }, license: "CC BY 4.0 · Moondream / NVIDIA", bundle: ReduxManifest.files, source: "https://huggingface.co/FluidInference/parakeet-redux-coreml", modelCard: "https://huggingface.co/moondream/parakeet-redux"),
-        .init(id: "orukeet", title: "Orukeet", detail: "25 languages · recognition after recording · Metal", revision: "c5511a3850fce1cbbfa5d94ef815966e1d99275f", hash: "68cd64b2a6c3c747f0a9f109884ed75b277c266c0fb8e5888c5a9f4d824fb9f7", bytes: 739508704, license: "CC BY-SA 4.0 · Oruk / NVIDIA", modelCard: "https://huggingface.co/oruk/orukeet")
-    ]
+    static let ultra: CatalogModel = .init(id: "parakeet-ultra", title: "Parakeet Ultra", detail: "25 languages · recognition after recording · Metal", revision: "a1539be1b849ea7463b88343e5277b373d0c4ea9", hash: "007a59761e9258779f189df396b50d12b83bb5b79e66df4b955c230d2f2a0a59", bytes: 740363168, license: "CC BY 4.0 · Moondream / NVIDIA", modelCard: "https://huggingface.co/moondream/parakeet-ultra")
+    static let all = [ultra]
+
+    static func preferredPath(previous: String, installed: [URL]) -> String {
+        if URL(fileURLWithPath: previous).lastPathComponent == ultra.filename,
+           FileManager.default.fileExists(atPath: previous) { return previous }
+        return installed.first { $0.lastPathComponent == ultra.filename }?.path ?? ""
+    }
+
+    /// Imports use the same pinned size and hash as downloads, even if renamed.
+    func validateFile(_ url: URL) throws {
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize
+        guard Int64(size ?? 0) == bytes else {
+            throw EngineFailure(message: "Choose the supported Parakeet Ultra Q8 file or download it in Vo1cy.")
+        }
+        let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
+        var digest = SHA256()
+        while let data = try handle.read(upToCount: 1024 * 1024), !data.isEmpty { digest.update(data: data) }
+        guard digest.finalize().map({ String(format: "%02x", $0) }).joined() == hash else {
+            throw EngineFailure(message: "Model verification failed. Download Parakeet Ultra in Vo1cy.")
+        }
+    }
+
 }
 
 /// A dedicated serial delegate queue performs hashing away from the UI.

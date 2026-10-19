@@ -88,7 +88,14 @@ final class AppState: ObservableObject {
             self?.shortcutHeld = false
             self?.cancel()
         }
-        refreshModels(); pruneHistory(); configureShortcut()
+        refreshModels()
+        let previousModel = preferences.modelPath
+        preferences.modelPath = CatalogModel.preferredPath(previous: previousModel, installed: installedModels)
+        preferences.translate = false
+        if previousModel != preferences.modelPath && preferences.modelPath.isEmpty {
+            status = "Download Parakeet Ultra to continue. Your settings and history are preserved."
+        }
+        savePreferences()
         escapeLocal = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             if event.keyCode == 53, self?.busy == true { self?.cancel(); return nil }; return event
         }
@@ -397,10 +404,11 @@ final class AppState: ObservableObject {
     }
 
     func refreshModels() {
-        installedModels = ((try? FileManager.default.contentsOfDirectory(at: modelDirectory, includingPropertiesForKeys: nil)) ?? []).filter { $0.pathExtension == "gguf" || ($0.lastPathComponent == "parakeet-redux.vo1cymodel" && FileManager.default.fileExists(atPath: $0.appendingPathComponent("parakeet_vocab.json").path)) }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+        installedModels = ((try? FileManager.default.contentsOfDirectory(at: modelDirectory, includingPropertiesForKeys: [.isRegularFileKey])) ?? [])
+            .filter { $0.lastPathComponent == CatalogModel.ultra.filename && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
     }
     func download(_ model: CatalogModel) {
-        guard downloadID == nil else { return }
+        guard downloadID == nil, model.id == CatalogModel.ultra.id else { return }
         let token = UUID(); downloadGeneration = token; downloadID = model.id; downloadProgress = 0
         downloader = ModelDownload(model: model, destination: modelDirectory.appendingPathComponent(model.filename), progress: { [weak self] fraction in
             DispatchQueue.main.async { if self?.downloadGeneration == token { self?.downloadProgress = fraction } }
@@ -417,19 +425,19 @@ final class AppState: ObservableObject {
     }
     func cancelDownload() { downloader?.cancel() }
     func selectModel(_ url: URL) {
-        guard !busy else { return }; preferences.modelPath = url.path; capabilities = nil; savePreferences()
+        guard !busy, url.lastPathComponent == CatalogModel.ultra.filename else { return }; preferences.modelPath = url.path; capabilities = nil; savePreferences()
         Task { await prepareModel() }
     }
     func importModel(_ url: URL) {
         guard !busy else { return }
         validatedModelPath = nil
         phase = .loading; let token = generation.next()
-        let destination = modelDirectory.appendingPathComponent(url.lastPathComponent)
+        let destination = modelDirectory.appendingPathComponent(CatalogModel.ultra.filename)
         Task {
             do {
                 try await Task.detached {
-                    let h = try FileHandle(forReadingFrom: url); defer { try? h.close() }
-                    guard try h.read(upToCount: 4) == Data("GGUF".utf8) else { throw EngineFailure(message: "This is not a GGUF file.") }
+                    try CatalogModel.ultra.validateFile(url)
+                    if url.standardizedFileURL == destination.standardizedFileURL { return }
                     try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
                     try FileManager.default.copyItem(at: url, to: destination)
                 }.value

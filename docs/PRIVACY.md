@@ -18,3 +18,5 @@ History and settings exports are explicit actions. History export contains trans
 Deleting a history entry also deletes its associated saved recording. Retention pruning does the same. Microphone warm mode discards audio outside a recording, but keeps the hardware active. Switch it off to release the microphone between recordings.
 
 Source archives and release packages must never include a user's data directory, audio samples, personal dictionaries, signing keys, or local development reports. See the release audit script and packaging instructions.
+
+The creator and community links open Telegram only when clicked. Vo1cy does not embed Telegram, contact it in the background, or send dictations through these links.

@@ -1,17 +1,16 @@
-# Vo1cy 0.1.0 preview 1 · build 22
+# Vo1cy 0.1.0 preview 2 · build 23
 
-First public source and macOS preview release.
+A focused local dictation app for Apple Silicon, powered by Parakeet Ultra.
 
-- English native interface with a dark purple appearance.
-- Guided setup with direct model download, integrity verification, and permission checks.
-- Five local speech-recognition model choices with source, license, release, and performance information.
-- Configurable recognition languages, shortcuts, output muting, recording sound/volume, and overlay position.
-- Local text cleanup, custom dictionary, corrections, history, optional audio retention, and file transcription.
-- Single-instance GUI with one main window.
-- MIT-licensed application source with separate third-party notices and model licenses.
+- One speech-recognition model throughout setup, downloads, and settings: Parakeet Ultra Q8, with 25 languages including English and German.
+- Discreet Telegram creator and community links in the sidebar and About page.
+- Existing Ultra downloads are reused. Unsupported selections are migrated without deleting settings, history, dictionaries, or model files.
+- Downloads and local imports use the same pinned size and SHA-256 verification.
+- Removed the unused Redux engine and FluidAudio package dependency.
+- Native English interface, dark purple appearance, configurable shortcuts, microphone bubble, output muting, and local text cleanup.
 
-Requires Apple Silicon and macOS 14 or later. Redux requires macOS 15. ASR model weights are downloaded separately.
+Requires Apple Silicon and macOS 14 or later. Download the speech model during setup. Audio stays on the Mac; opening Telegram links is optional.
 
-**Signing:** this preview is ad-hoc signed and not notarized by Apple. It is not a Developer-ID-signed production release. Preview updates are downloaded manually from GitHub Releases; automatic Sparkle updates are not configured.
+**Signing:** this preview is ad-hoc signed and not notarized by Apple. Updates are downloaded manually from GitHub Releases. A signed automatic update channel is not configured.
 
-See [Setup](SETUP.md), [Privacy](PRIVACY.md), and [Releasing](RELEASING.md). Recognition, punctuation, and output-language filtering remain imperfect; no universal accuracy or speed guarantee is made.
+See [Setup](https://github.com/an0ymOnTelegram/Vo1cy/blob/codex/public-release/docs/SETUP.md), [Privacy](https://github.com/an0ymOnTelegram/Vo1cy/blob/codex/public-release/docs/PRIVACY.md), and [Model details](https://github.com/an0ymOnTelegram/Vo1cy/blob/codex/public-release/docs/MODELS.md). Recognition and punctuation remain imperfect; performance depends on the Mac and recording conditions.

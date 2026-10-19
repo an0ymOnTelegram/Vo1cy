@@ -5,12 +5,11 @@ let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 let package = Package(
     name: "Vo1cy", platforms: [.macOS(.v14)],
     products: [.executable(name: "Vo1cy", targets: ["Vo1cy"])],
-    dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.0"),
-        .package(url: "https://github.com/FluidInference/FluidAudio.git", exact: "0.17.5", traits: [])],
+    dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.0")],
     targets: [
         .systemLibrary(name: "CTranscribe"),
         .target(name: "VoiceCore"),
-        .executableTarget(name: "Vo1cy", dependencies: ["VoiceCore", "CTranscribe", .product(name: "FluidAudio", package: "FluidAudio"), .product(name: "Sparkle", package: "Sparkle")],
+        .executableTarget(name: "Vo1cy", dependencies: ["VoiceCore", "CTranscribe", .product(name: "Sparkle", package: "Sparkle")],
             swiftSettings: [.unsafeFlags(["-Xcc", "-I" + root + "/vendor/include"])],
             linkerSettings: [.unsafeFlags(["-L", root + "/vendor/lib", "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
         .testTarget(name: "VoiceCoreTests", dependencies: ["VoiceCore"])

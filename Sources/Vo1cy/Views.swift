@@ -11,7 +11,7 @@ struct MainView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var navigation = NavigationSelection()
-    private let sections = ["General", "Dictation", "History", "Models", "Post-processing", "Advanced"]
+    private let sections = ["General", "Dictation", "History", "Model", "Post-processing", "Advanced"]
     var body: some View {
         HStack(spacing: 0) {
             sidebar
@@ -34,7 +34,7 @@ struct MainView: View {
         .tint(Vo1cyStyle.accent)
         .preferredColorScheme(.dark)
         .background(CompactWindow())
-        .onAppear { if !state.preferences.onboardingComplete { navigation.section = "Setup" } }
+        .onAppear { if !state.preferences.onboardingComplete || state.preferences.modelPath.isEmpty { navigation.section = "Setup" } }
         .onChange(of: state.preferences) { _, _ in state.savePreferences() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in state.refreshPermissions() }
         .sheet(item: $navigation.correction) { entry in
@@ -59,6 +59,7 @@ struct MainView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Label("Local on your Mac", systemImage: "lock.shield").font(.system(size: 10, weight: .medium))
                 Text("v\(AppVersion.display) · Preview").font(.system(size: 10)).foregroundStyle(Vo1cyStyle.muted)
+                CommunityLinks().padding(.top, 8)
             }.padding(.horizontal, 16).padding(.bottom, 17)
         }.frame(width: 166).background(Vo1cyStyle.sidebar)
     }
@@ -108,7 +109,7 @@ struct MainView: View {
         switch navigation.section {
         case "General": return "Keyboard shortcut, model, and language."
         case "Dictation": return "Speak and turn your voice into text."
-        case "Models": return "Speech recognition directly on your Mac."
+        case "Model": return "Speech recognition directly on your Mac."
         case "History": return "Recent transcriptions in one place."
         case "Post-processing": return "Custom corrections and optional text cleanup."
         case "Advanced": return "Performance, text delivery, and storage."
@@ -119,7 +120,7 @@ struct MainView: View {
     @ViewBuilder private var page: some View {
         switch navigation.section {
         case "Setup": setup
-        case "Models": models
+        case "Model": models
         case "History": history
         case "Post-processing": dictionary
         case "Advanced": advanced
@@ -133,7 +134,7 @@ struct MainView: View {
         VStack(alignment: .leading, spacing: 19) {
             SettingsCard("Keyboard shortcut") {
                 SettingRow("Dictation", detail: "A single key or combination, including in other apps.") {
-                    ShortcutRecorder(label: state.preferences.shortcutLabel, onEditing: state.editShortcut) { code, modifiers, label in
+                    ShortcutRecorder(label: shortcutDisplayLabel, onEditing: state.editShortcut) { code, modifiers, label in
                         state.preferences.shortcutCode = code; state.preferences.shortcutModifiers = modifiers; state.preferences.shortcutLabel = label
                     }.frame(width: 200, height: 27)
                 }
@@ -168,7 +169,7 @@ struct MainView: View {
             }
             SettingsCard("Speech recognition") {
                 SettingRow(modelTitle, detail: state.capabilities.map { $0.streaming ? "Live text while speaking" : "Text after recording" } ?? "Selected model") {
-                    Button("Change model") { navigation.section = "Models" }
+                    Button("Manage model") { navigation.section = "Model" }
                 }
                 CardDivider()
                 SettingRow("Recognition language", detail: "A fixed language or automatic detection.") { languagePicker }
@@ -285,8 +286,8 @@ struct MainView: View {
                     .font(.system(size: 11)).foregroundStyle(Vo1cyStyle.muted)
             }
             SettingsCard("02 · Model") {
-                SettingRow(modelTitle, detail: "Ultra for multilingual accuracy · Nemotron for live text · Redux for a small download.") {
-                    Button("Browse models") { navigation.section = "Models" }
+                SettingRow(modelTitle, detail: "Parakeet Ultra · local multilingual speech recognition.") {
+                    Button("Set up model") { navigation.section = "Model" }
                 }
             }
             if state.preferences.modelPath.isEmpty, let model = CatalogModel.all.first(where: { $0.id == ModelAssessment.recommendedID }) {
@@ -296,7 +297,7 @@ struct MainView: View {
                 SettingRow("Recognition language") { languagePicker }
                 CardDivider()
                 SettingRow("Keyboard shortcut") {
-                    ShortcutRecorder(label: state.preferences.shortcutLabel, onEditing: state.editShortcut) { code, modifiers, label in
+                    ShortcutRecorder(label: shortcutDisplayLabel, onEditing: state.editShortcut) { code, modifiers, label in
                         state.preferences.shortcutCode = code; state.preferences.shortcutModifiers = modifiers; state.preferences.shortcutLabel = label
                     }.frame(width: 200, height: 27)
                 }
@@ -330,22 +331,22 @@ struct MainView: View {
 
     private var models: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsCard("Choose a model") {
+            SettingsCard("Speech recognition") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Recommended for multilingual dictation: Parakeet Ultra").font(.system(size: 14, weight: .semibold))
-                    Text("Choose Ultra for recognition quality, Nemotron for live text while speaking, or Redux for a small download.")
-                    Text("All models run locally after download, with no subscription. Only the selected model is loaded.")
+                    Text("Powered by Parakeet Ultra").font(.system(size: 14, weight: .semibold))
+                    Text("25 languages, including English and German. Speak naturally; text appears when recording ends.")
+                    Text("Runs locally after a one-time download. No account or subscription.")
                         .foregroundStyle(Vo1cyStyle.muted)
-                    Text("Reviewed: \(ModelAssessment.reviewedOn) · Recommendations ship with app updates; no automatic live comparison.")
+                    Text("Reviewed: \(ModelAssessment.reviewedOn) · Model information ships with app updates.")
                         .font(.system(size: 10)).foregroundStyle(Vo1cyStyle.muted)
                 }.font(.system(size: 12)).padding(14)
             }
-            ForEach(CatalogModel.all.sorted { ($0.id == ModelAssessment.recommendedID ? 0 : 1) < ($1.id == ModelAssessment.recommendedID ? 0 : 1) }) { model in
+            ForEach(CatalogModel.all) { model in
                 CatalogModelCard(model: model)
             }
-            SettingsCard("Installed models") {
+            SettingsCard("Local model") {
                 if state.installedModels.isEmpty {
-                    Text("No models installed yet.").foregroundStyle(Vo1cyStyle.muted).padding(14)
+                    Text("Parakeet Ultra is not downloaded yet.").foregroundStyle(Vo1cyStyle.muted).padding(14)
                 }
                 ForEach(state.installedModels, id: \.path) { url in
                     HStack(spacing: 9) {
@@ -357,9 +358,9 @@ struct MainView: View {
                     }.padding(12).disabled(state.busy)
                 }
                 CardDivider()
-                SettingRow("Import a model file", detail: "Import a local copy of a GGUF file.") { Button("Import …") { pickModel() }.disabled(state.busy) }
+                SettingRow("Import Parakeet Ultra", detail: "Use an existing Ultra Q8 GGUF file. Its size and SHA-256 must match the verified download.") { Button("Import …") { pickModel() }.disabled(state.busy) }
             }
-            Text("Downloads: Hugging Face · SHA-256 verified. Imported files are not checked for source authenticity.").font(.system(size: 10)).foregroundStyle(Vo1cyStyle.muted)
+            Text("Downloads and imports are verified against a pinned SHA-256 checksum.").font(.system(size: 10)).foregroundStyle(Vo1cyStyle.muted)
             if let caps = state.capabilities {
                 DisclosureGroup("Model information") {
                     Text("\(caps.backend) · up to \(Int(min(600, caps.maxSeconds))) s per recording\nLanguages: \(caps.languages.joined(separator: ", "))").font(.system(size: 11)).foregroundStyle(Vo1cyStyle.muted).padding(.top, 8)
@@ -469,7 +470,7 @@ struct MainView: View {
                 CardDivider()
                 SettingToggle(title: "Keep microphone active", detail: "Avoid microphone startup delay. The macOS microphone indicator remains visible.", isOn: $state.preferences.warmMicrophone)
                 CardDivider()
-                SettingToggle(title: "Use CPU only", detail: "For troubleshooting. The default backend uses Metal or Core ML GPU acceleration.", isOn: $state.preferences.useCPU)
+                SettingToggle(title: "Use CPU only", detail: "For troubleshooting. The default backend uses Metal GPU acceleration.", isOn: $state.preferences.useCPU)
                 CardDivider()
                 SettingRow("Reload model", detail: "Apply performance settings to the selected model.") {
                     Button("Apply") { Task { await state.prepareModel() } }.disabled(state.preferences.modelPath.isEmpty)
@@ -532,6 +533,11 @@ struct MainView: View {
                     Link("Open GitHub ↗", destination: URL(string: "https://github.com/an0ymOnTelegram/Vo1cy")!).foregroundStyle(Vo1cyStyle.accent)
                 }
             }
+            SettingsCard("Community") {
+                SettingRow("Made by @an0ym", detail: "Connect on Telegram or join the community.") {
+                    CommunityLinks()
+                }
+            }
             SettingsCard("Diagnostics") {
                 SettingRow("Export diagnostics", detail: "Technical information without transcription text.") {
                     Button("Export …") { savePanel(name: "Vo1cy-Diagnostics.json") { state.exportDiagnostics(to: $0) } }
@@ -541,7 +547,7 @@ struct MainView: View {
                 CardDivider()
                 SettingRow("Recording end to result") { Text(String(format: "%.0f ms", state.lastFinishMS)).monospacedDigit().foregroundStyle(Vo1cyStyle.muted) }
             }
-            Text("Native macOS app · SwiftUI · Metal / Core ML · transcribe.cpp / FluidAudio · Sparkle\nSee release notes for signing and notarization status.").font(.system(size: 10)).foregroundStyle(Vo1cyStyle.muted)
+            Text("Native macOS app · SwiftUI · Metal · transcribe.cpp · Sparkle\nSee release notes for signing and notarization status.").font(.system(size: 10)).foregroundStyle(Vo1cyStyle.muted)
         }
     }
 
@@ -587,6 +593,10 @@ struct MainView: View {
         state.preferences.shortcutModifiers = 0
         state.preferences.shortcutLabel = label
     }
+    private var shortcutDisplayLabel: String {
+        if state.preferences.shortcutModifiers == 0, let key = ShortcutKeys.modifier(state.preferences.shortcutCode) { return key.label }
+        return state.preferences.shortcutLabel
+    }
     private var modelTitle: String {
         state.preferences.modelPath.isEmpty ? "No model selected" : modelName(URL(fileURLWithPath: state.preferences.modelPath))
     }
@@ -594,7 +604,7 @@ struct MainView: View {
         CatalogModel.all.first { $0.filename == url.lastPathComponent }?.title ?? url.deletingPathExtension().lastPathComponent
     }
     private func icon(_ section: String) -> String {
-        ["General":"slider.horizontal.3", "Dictation":"waveform", "Setup":"checklist", "Models":"cpu", "History":"clock.arrow.circlepath", "Post-processing":"sparkles", "Advanced":"gearshape", "About Vo1cy":"info.circle"][section] ?? "circle"
+        ["General":"slider.horizontal.3", "Dictation":"waveform", "Setup":"checklist", "Model":"cpu", "History":"clock.arrow.circlepath", "Post-processing":"sparkles", "Advanced":"gearshape", "About Vo1cy":"info.circle"][section] ?? "circle"
     }
     private func pickSound() {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.audio]; panel.allowsMultipleSelection = false

@@ -22,11 +22,6 @@ cp vendor/silero-vad-v6.2-F32.gguf "$APP/Contents/Resources/"
 for resource in "$BIN/"*.bundle; do
   if [ -d "$resource" ]; then ditto --norsrc --noextattr "$resource" "$APP/Contents/Resources/$(basename "$resource")"; fi
 done
-if [ -f .build/checkouts/FluidAudio/LICENSE ]; then cp .build/checkouts/FluidAudio/LICENSE "$APP/Contents/Resources/Licenses/FluidAudio.txt"; fi
-if [ -d .build/checkouts/FluidAudio/ThirdPartyLicenses ]; then
-  mkdir -p "$APP/Contents/Resources/Licenses/FluidAudio"
-  cp .build/checkouts/FluidAudio/ThirdPartyLicenses/* "$APP/Contents/Resources/Licenses/FluidAudio/"
-fi
 if [ -d vendor/licenses ]; then ditto vendor/licenses "$APP/Contents/Resources/Licenses"; fi
 cp LICENSE "$APP/Contents/Resources/Licenses/Vo1cy-MIT.txt"
 cp ThirdParty/Handy-LICENSE.txt "$APP/Contents/Resources/Licenses/Handy-MIT.txt"

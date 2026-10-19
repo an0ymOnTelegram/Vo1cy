@@ -1,6 +1,6 @@
 # Contributing
 
-Use Apple Silicon, macOS 14 or newer, Swift 6.2 or newer, CMake, and Git. Redux requires macOS 15. Keep application code native and avoid extra inference work in the recording path.
+Use Apple Silicon, macOS 14 or newer, Swift 6.2 or newer, CMake, and Git. Keep application code native and avoid extra inference work in the recording path.
 
 Run these portable checks before submitting a change:
 
@@ -21,6 +21,6 @@ python3 scripts/audit-release.py
 
 Use synthetic, neutral fixtures. Never commit real dictations, personal dictionaries, audio, local file paths, signing material, or private exports. Keep tests for literal protection, mixed languages, cancellation, failed downloads, and single-instance behavior. Do not claim recognition-quality improvements from text-rule tests alone.
 
-Dependencies and model licenses must remain attributed. New models need immutable revisions, byte counts, SHA-256 hashes, language capabilities, license links, and honest resource guidance. Keep model downloads separate from releases.
+Dependencies and model licenses must remain attributed. The Ultra model uses an immutable revision, byte count, SHA-256 hash, language capabilities, license links, and honest resource guidance. Keep model downloads separate from releases.
 
 Pull requests should explain the user-visible change and relevant validation. Report security issues privately through GitHub's security reporting feature when available; never include credentials or personal recordings in a public issue.

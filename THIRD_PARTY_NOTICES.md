@@ -22,45 +22,19 @@ The license for Vo1cy's own code does not replace dependency or model licenses.
 
 Model weights are downloaded separately and are not included in the source
 repository or app bundle. Catalog hashes and exact revisions are in Models.swift.
-NVIDIA Canary 180M Flash and NVIDIA Nemotron 3.5 ASR Streaming 0.6B are converted
-and quantized to GGUF by handy-computer. Original weights: NVIDIA; GGUF conversion:
-handy-computer. Model cards and license/derivation notices:
+Parakeet Ultra is provided by Moondream, derived from NVIDIA Parakeet TDT
+0.6B v3, under CC BY 4.0. The GGUF conversion and Q8 quantization are by
+handy-computer. Vo1cy does not modify the pinned converted weights.
 
-- https://huggingface.co/handy-computer/canary-180m-flash-gguf
-- https://huggingface.co/handy-computer/nemotron-3.5-asr-streaming-0.6b-gguf
+- Original model: https://huggingface.co/moondream/parakeet-ultra
+- Base model: https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3
+- Converted weights: https://huggingface.co/handy-computer/parakeet-ultra-gguf
+- License: https://creativecommons.org/licenses/by/4.0/
 
-The app links to model license information before download. Imported models remain
-subject to their own licenses. Vo1cy does not grant rights to third-party weights.
+The app links model license information before download. These licenses apply
+to the separately downloaded weights; Vo1cy's MIT license does not replace them.
+Only the small Silero VAD model is bundled with the app. User audio, personal
+history, and user dictionaries are never included in release packages.
 
-## Additional models and runtime
-
-- FluidAudio 0.17.5, FluidInference contributors, Apache-2.0. Pinned by SwiftPM
-  (revision 0b1f46289fe27d95b5e66ad8be46e64f5ee02ae7). Used for Redux inference.
-  https://github.com/FluidInference/FluidAudio
-  The optional NemoTextProcessing trait is disabled. Library and bundled
-  third-party license files are copied into Resources/Licenses.
-- Parakeet Ultra and Parakeet Redux: Moondream, derived from NVIDIA
-  Parakeet TDT 0.6B v3; CC BY 4.0. Ultra GGUF conversion/quantization by
-  handy-computer; Redux Core ML conversion by FluidInference. Vo1cy does not
-  modify these pinned converted weights.
-  https://huggingface.co/moondream/parakeet-ultra
-  https://huggingface.co/moondream/parakeet-redux
-  https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3
-  https://huggingface.co/handy-computer/parakeet-ultra-gguf
-  https://huggingface.co/FluidInference/parakeet-redux-coreml
-  License: https://creativecommons.org/licenses/by/4.0/
-- Orukeet: Oruk AI, derived from NVIDIA Parakeet TDT 0.6B v3;
-  CC BY-SA 4.0. GGUF conversion/quantization by handy-computer. Vo1cy does
-  not modify the converted weights. Adaptations of the weights retain the
-  ShareAlike license.
-  https://huggingface.co/oruk/orukeet
-  https://huggingface.co/handy-computer/orukeet-gguf
-  License: https://creativecommons.org/licenses/by-sa/4.0/
-
-These ASR model licenses apply to separately downloaded weights. No ASR weights,
-user audio, or transcripts are included in the app archive or source. Only the
-small Silero VAD model is bundled with the app.
-
-Nemotron 3.5 weights use the NVIDIA Open Model Distribution Agreement (OpenMDW-1.1).
-Canary weights use CC BY 4.0. Always review the model card linked in the app before
-downloading, modifying, or redistributing weights.
+The underlying transcribe.cpp runtime may contain support for other architectures;
+its full third-party notices remain bundled even though Vo1cy exposes only Ultra.

@@ -1,6 +1,6 @@
 # Release procedure
 
-Use an Apple Silicon Mac, Swift 6.2 or newer, CMake, and a clean checkout. The application bundle supports macOS 14+. Redux additionally requires macOS 15. This repository's CI uses the standard `macos-15` Apple Silicon runner.
+Use an Apple Silicon Mac, Swift 6.2 or newer, CMake, and a clean checkout. The application bundle supports macOS 14+. This repository's CI uses the standard `macos-15` Apple Silicon runner.
 
 ## Public preview
 
