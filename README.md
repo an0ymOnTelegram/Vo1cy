@@ -1,6 +1,10 @@
 # Vo1cy
 
+[![Build and test](https://github.com/an0ymOnTelegram/Vo1cy/actions/workflows/build.yml/badge.svg?branch=codex%2Fpublic-release)](https://github.com/an0ymOnTelegram/Vo1cy/actions/workflows/build.yml)
+
 Local speech-to-text for Apple Silicon Macs. Hold a shortcut, speak, and insert the result into the app you are using.
+
+![Vo1cy on macOS — shortcut and multilingual recognition settings in the dark purple interface](docs/images/vo1cy-macos.png)
 
 **Preview release · macOS 14 or later · Apple Silicon only.** Parakeet Redux requires macOS 15. The interface is English; recognition languages depend on the selected model. Intel builds are not provided or validated.
 
