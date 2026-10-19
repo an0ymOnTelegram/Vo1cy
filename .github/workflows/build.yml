@@ -1,0 +1,46 @@
+name: Build and test
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore: ['docs/**', '*.md']
+  pull_request:
+    paths-ignore: ['docs/**', '*.md']
+permissions:
+  contents: read
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Build pinned inference runtime
+        run: ./scripts/bootstrap-engine.sh
+      - name: Unit tests
+        run: swift test
+      - name: Portable core and shortcut rules
+        run: ./scripts/test-core.sh
+      - name: Language guard and formatting
+        run: |
+          ./scripts/test-instance.sh
+          ./scripts/test-models.sh
+          ./scripts/test-languages.sh
+          ./scripts/test-cleanup.sh
+          ./scripts/test-formatting.sh
+          ./scripts/test-punctuation.sh
+          ./scripts/test-output-mute.sh
+          ./scripts/test-release-settings.sh
+          python3 scripts/audit-release.py
+      - name: Verify Apple Silicon runner
+        run: test "$(uname -m)" = arm64
+      - name: Build development app
+        run: ./scripts/build-app.sh
+      - name: Archive development build
+        run: ditto -c -k --sequesterRsrc --keepParent dist/Vo1cy.app dist/Vo1cy-development.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vo1cy-development-${{ runner.arch }}
+          path: dist/Vo1cy-development.zip
+          retention-days: 7

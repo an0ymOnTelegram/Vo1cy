@@ -1,0 +1,5 @@
+module CTranscribe [system] {
+    header "shim.h"
+    link "transcribe"
+    export *
+}
