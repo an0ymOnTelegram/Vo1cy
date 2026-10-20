@@ -9,6 +9,7 @@ final class InteractionSounds {
     private var enabled = false
     private var volume: Float = 1
     private let directory: URL
+    private var startSoundFile: URL { directory.appendingPathComponent("start.wav") }
     private var soundFile: URL { directory.appendingPathComponent("stop.wav") }
 
     init(root: URL) { directory = root.appendingPathComponent("SoundEffects", isDirectory: true) }
@@ -48,7 +49,17 @@ final class InteractionSounds {
         startPlayer?.stop(); startPlayer = nil
         stopPlayer?.stop(); stopPlayer = nil
         guard enabled else { return }
-        if let player = try? AVAudioPlayer(data: Self.startTone()) {
+        // Preserve local start cues from previous versions. Limit their length
+        // so output muting never cuts the cue off or waits on a long audio file.
+        let customStart: AVAudioPlayer? = {
+            guard let size = try? startSoundFile.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+                  size > 0, size <= 10_000_000,
+                  let data = try? Data(contentsOf: startSoundFile),
+                  let player = try? AVAudioPlayer(data: data),
+                  player.duration > 0, player.duration <= 0.2 else { return nil }
+            return player
+        }()
+        if let player = customStart ?? (try? AVAudioPlayer(data: Self.startTone())) {
             player.volume = volume
             if player.prepareToPlay() { startPlayer = player }
         }
