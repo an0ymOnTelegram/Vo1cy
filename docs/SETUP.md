@@ -17,10 +17,10 @@ The Model page manages Parakeet Ultra: download, reload, import, or delete it. I
 
 | Page | Controls |
 | --- | --- |
-| General | Shortcut and hold/toggle mode; recognition language; allowed-language selection; microphone; output muting; sound enable/volume/import/reset; indicator enable/position/preview |
+| General | Shortcut and hold/toggle mode; recognition language; allowed-language selection; microphone; output muting; start/stop sounds, volume, stop-sound import/reset; indicator enable/position/preview |
 | Model | Download/cancel/retry; select/reload; import; delete; source/license/release information |
 | Post-processing | Punctuation; sentence boundaries; spoken lists; fillers; restarts; common spellings; custom dictionary; phrase or whole-dictation scope; protection of quoted text, code, and URLs for phrase rules |
-| Advanced | Keep model loaded; keep microphone active; CPU mode and Apply; automatic insertion; trailing space; insertion/clipboard delays; audio saving; history limit and retention; launch at login; microphone refresh |
+| Advanced | Keep model loaded; CPU mode and Apply; automatic insertion; trailing space; insertion/clipboard delays; audio saving; history limit and retention; launch at login; microphone refresh |
 | History | Copy; correct; save an optional reusable rule; export; delete; playback and retranscription if audio was saved |
 | About | Version/build; release downloads or configured Sparkle updates; diagnostic export; Telegram creator/community links |
 

@@ -190,14 +190,14 @@ struct MainView: View {
                 CardDivider()
                 SettingToggle(title: "Mute output while recording", detail: "Restore the previous output state when recording ends or is cancelled.", isOn: Binding(get: { state.preferences.muteOutput ?? true }, set: { state.preferences.muteOutput = $0 }))
                 CardDivider()
-                SettingToggle(title: "Sound effects", detail: "Play a stop sound after recording. Output muting is configured separately.", isOn: $state.preferences.playSounds)
+                SettingToggle(title: "Sound effects", detail: "Play a short start cue and a stop sound. Output is muted after the start cue finishes.", isOn: $state.preferences.playSounds)
                 CardDivider()
                 SettingRow("Sound volume", detail: "Relative to your current system volume.") {
                     Slider(value: Binding(get: { state.preferences.soundVolume ?? 1 }, set: { state.preferences.soundVolume = $0 }), in: 0...1).frame(width: 120)
                     Text("\(Int((state.preferences.soundVolume ?? 1) * 100))%").monospacedDigit().frame(width: 36)
                 }.disabled(!state.preferences.playSounds)
                 CardDivider()
-                SettingRow("Recording sound", detail: "Use a local audio file up to 2 seconds long. It stays on this Mac.") {
+                SettingRow("Stop sound", detail: "Use a local audio file up to 2 seconds long. It stays on this Mac.") {
                     Button("Choose …") { pickSound() }
                     Button("Reset") { state.resetSound() }
                     Button("Preview") { state.previewSound() }.disabled(!state.preferences.playSounds)
@@ -305,8 +305,7 @@ struct MainView: View {
                 SettingToggle(title: "Insert automatically", detail: "Requires Accessibility permission. Turn off to copy results manually.", isOn: $state.preferences.pasteAutomatically)
                 CardDivider()
                 SettingToggle(title: "Keep model loaded", detail: "Avoid reloading the model before each recording.", isOn: $state.preferences.keepModelLoaded)
-                CardDivider()
-                SettingToggle(title: "Keep microphone active", detail: "Faster startup. Audio outside a recording is discarded; the macOS microphone indicator stays visible.", isOn: $state.preferences.warmMicrophone)
+
             }.disabled(state.busy)
             HStack {
                 Button("Check permissions") { state.refreshPermissions() }
@@ -466,9 +465,11 @@ struct MainView: View {
     private var advanced: some View {
         VStack(alignment: .leading, spacing: 19) {
             SettingsCard("Performance") {
-                SettingToggle(title: "Keep model loaded", detail: "Faster startup, with ongoing memory use.", isOn: $state.preferences.keepModelLoaded)
+                Text("The microphone is active only while recording. Keeping the speech model loaded does not keep the microphone on.")
+                    .font(.system(size: 11)).foregroundStyle(Vo1cyStyle.muted).padding(13)
                 CardDivider()
-                SettingToggle(title: "Keep microphone active", detail: "Avoid microphone startup delay. The macOS microphone indicator remains visible.", isOn: $state.preferences.warmMicrophone)
+                SettingToggle(title: "Keep model loaded", detail: "Faster startup, with ongoing memory use.", isOn: $state.preferences.keepModelLoaded)
+
                 CardDivider()
                 SettingToggle(title: "Use CPU only", detail: "For troubleshooting. The default backend uses Metal GPU acceleration.", isOn: $state.preferences.useCPU)
                 CardDivider()

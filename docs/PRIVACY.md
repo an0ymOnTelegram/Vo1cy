@@ -15,7 +15,7 @@ User data is stored under `~/Library/Application Support/Vo1cy/`:
 
 History and settings exports are explicit actions. History export contains transcription text. Diagnostic export omits transcription text, audio, dictionary entries, and file paths, but includes app, operating-system, engine and timing information. Review any export before sharing it.
 
-Deleting a history entry also deletes its associated saved recording. Retention pruning does the same. Microphone warm mode discards audio outside a recording, but keeps the hardware active. Switch it off to release the microphone between recordings.
+Deleting a history entry also deletes its associated saved recording. Retention pruning does the same. The microphone is active only during an explicit recording. Stopping, cancelling, or a recording error releases the input engine; loading a speech model does not open the microphone. Older keep-microphone-active preferences are disabled during upgrade.
 
 Source archives and release packages must never include a user's data directory, audio samples, personal dictionaries, signing keys, or local development reports. See the release audit script and packaging instructions.
 

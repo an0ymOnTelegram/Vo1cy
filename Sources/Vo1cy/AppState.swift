@@ -27,6 +27,7 @@ final class AppState: ObservableObject {
     let updater = UpdateService()
     let root: URL
     private let interactionSounds: InteractionSounds
+    private let recordingCue = RecordingCue()
     private let outputMute: SystemOutputMute
     private let engine = NativeEngine()
     private let capture = AudioCapture()
@@ -71,6 +72,7 @@ final class AppState: ObservableObject {
         outputMute = SystemOutputMute(root: root)
         preferences = (try? Persistence.load(Preferences.self, from: root.appendingPathComponent("settings.json"))) ?? Preferences()
         history = (try? Persistence.load([HistoryEntry].self, from: root.appendingPathComponent("history.json"))) ?? []
+        preferences.warmMicrophone = false
         interactionSounds.configure(enabled: preferences.playSounds, volume: preferences.soundVolume ?? 1)
         overlay.position = OverlayPosition(savedValue: preferences.overlayPosition)
         outputMute.onFailure = { [weak self] error in
@@ -113,7 +115,7 @@ final class AppState: ObservableObject {
         configureShortcut(); pruneHistory()
         interactionSounds.configure(enabled: preferences.playSounds, volume: preferences.soundVolume ?? 1)
         overlay.position = OverlayPosition(savedValue: preferences.overlayPosition)
-        if !preferences.warmMicrophone && !busy { capture.shutdown() }
+        if !captureActive { capture.shutdown() }
     }
 
     private func configureShortcut() {
@@ -192,7 +194,6 @@ final class AppState: ObservableObject {
                 supported: caps.languages, automatic: caps.autoLanguage, preferred: Locale.preferredLanguages.first ?? "en")
             if !caps.translation { preferences.translate = false }
             status = "Ready · \(caps.backend) · \(caps.streaming ? "Streaming" : "Recognition after recording")"
-            if preferences.warmMicrophone && microphoneAllowed && preferences.onboardingComplete { try capture.prepare(device: preferences.deviceID) }
             phase = .idle; savePreferences()
             if !preferences.keepModelLoaded { await engine.unload() }
         } catch { if generation.accepts(token) { phase = .idle; status = error.localizedDescription } }
@@ -224,9 +225,8 @@ final class AppState: ObservableObject {
         let inbox = CaptureInbox(); captureInbox = inbox
         phase = .loading
         do {
-            // Silence output before opening capture, without waiting for a cue.
-            if runSettings.muteOutput ?? true { try outputMute.begin() }
             player?.stop()
+            recordingCue.cancel()
             interactionSounds.silence()
             // Capture immediately; decoder startup must not erase the first words.
             captureActive = true; lastBuffer = Date()
@@ -234,6 +234,16 @@ final class AppState: ObservableObject {
                 guard inbox.append(chunk) else { return }
                 DispatchQueue.main.async { self?.drainCapture(token: token, flag: activeFlag) }
             }
+            // Capture immediately so the cue never delays or drops the first words.
+            // Global output mute follows the short cue; stopping cancels this action.
+            let cueDuration = interactionSounds.start()
+            if runSettings.muteOutput ?? true {
+                recordingCue.schedule(after: cueDuration, action: { [weak self] in
+                    guard let self, self.captureActive, self.generation.accepts(token) else { return }
+                    try self.outputMute.begin()
+                }, onFailure: { [weak self] error in self?.fail(error, token: token) })
+            }
+            guard generation.accepts(token), captureActive else { return }
             if preferences.showOverlay { overlay.startRecording() }
             watchdog = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
                 Task { @MainActor in
@@ -305,7 +315,8 @@ final class AppState: ObservableObject {
 
     func stop() {
         guard captureActive else { return }
-        capture.stop(warm: runSettings.warmMicrophone)
+        recordingCue.cancel()
+        capture.stop()
         // The producer has stopped, including its in-flight callback. Drain before
         // changing phase; queued main-thread notifications cannot lose final audio.
         for chunk in captureInbox.finish() { accept(chunk, token: generation.value, flag: flag, checkLimit: false) }
@@ -313,6 +324,7 @@ final class AppState: ObservableObject {
         captureActive = false; stopRequested = true
         watchdog?.invalidate(); watchdog = nil
         outputMute.restore()
+        interactionSounds.silence()
         interactionSounds.stop()
         phase = .processing; level = 0
         if preferences.showOverlay { overlay.processing() }
@@ -375,9 +387,12 @@ final class AppState: ObservableObject {
     }
 
     func cancel() {
+        recordingCue.cancel()
+        interactionSounds.silence()
+        capture.stop()
         outputMute.restore()
         guard busy else { return }
-        generation.next(); flag.cancel(); capture.stop(warm: preferences.warmMicrophone)
+        generation.next(); flag.cancel()
         _ = captureInbox.finish(); captureActive = false; decoderReady = false
         watchdog?.invalidate(); watchdog = nil; samples = []; pendingChunks = 0; level = 0
         overlay.hide(); phase = .idle; status = "Cancelled — no further text will be inserted."
@@ -513,5 +528,5 @@ final class AppState: ObservableObject {
         do { if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }; startAtLogin = SMAppService.mainApp.status == .enabled }
         catch { startAtLogin = SMAppService.mainApp.status == .enabled; status = error.localizedDescription }
     }
-    func shutdown() { flag.cancel(); capture.shutdown(); outputMute.shutdown(); shortcut.unregister(); downloader?.cancel(); engine.shutdown() }
+    func shutdown() { recordingCue.cancel(); interactionSounds.silence(); flag.cancel(); capture.shutdown(); outputMute.shutdown(); shortcut.unregister(); downloader?.cancel(); engine.shutdown() }
 }

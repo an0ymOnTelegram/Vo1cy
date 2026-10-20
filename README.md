@@ -40,7 +40,7 @@ Recognition and punctuation are imperfect, especially for very short words or mi
 
 **Parakeet Ultra** is the only supported speech-recognition model. It runs locally with Metal acceleration and produces text after recording stops. Choose automatic language detection or a fixed language. See [model details](docs/MODELS.md).
 
-Keeping the model in memory reduces startup delay; keeping the microphone active further reduces delay and leaves the macOS microphone indicator visible. Both are configurable. Audio outside an active recording is discarded.
+Keeping the model in memory reduces startup delay and is configurable. The microphone opens only for an explicit recording and closes on stop, cancel, or failure. A short start cue plays before optional output muting; a stop cue plays after output is restored.
 
 ## Build
 

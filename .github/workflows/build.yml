@@ -31,6 +31,7 @@ jobs:
           ./scripts/test-formatting.sh
           ./scripts/test-punctuation.sh
           ./scripts/test-output-mute.sh
+          ./scripts/test-recording-cue.sh
           ./scripts/test-release-settings.sh
           python3 scripts/audit-release.py
       - name: Verify Apple Silicon runner

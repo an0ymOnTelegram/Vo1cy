@@ -6,6 +6,7 @@ public struct Preferences: Codable, Equatable {
     public var translate = false
     public var modelPath = ""
     public var keepModelLoaded = true
+    // Retained for decoding older preferences; the app migrates this to false.
     public var warmMicrophone = false
     public var deviceID: UInt32 = 0
     public var removeFillers = false

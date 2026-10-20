@@ -13,6 +13,7 @@ Run these portable checks before submitting a change:
 ./scripts/test-instance.sh
 ./scripts/test-models.sh
 ./scripts/test-output-mute.sh
+./scripts/test-recording-cue.sh
 ./scripts/test-release-settings.sh
 python3 scripts/audit-release.py
 ```

@@ -23,7 +23,7 @@ struct InputDevice: Identifiable {
     }
 }
 
-/// Capture owns the converter. Idle warm-mic buffers are discarded before allocation.
+/// The input engine exists only during an explicit recording.
 final class AudioCapture {
     private var engine: AVAudioEngine?
     private var converter: AVAudioConverter?
@@ -34,7 +34,7 @@ final class AudioCapture {
     var onDeviceChange: (() -> Void)?
     private var observer: NSObjectProtocol?
 
-    func prepare(device: UInt32) throws {
+    private func prepare(device: UInt32) throws {
         if engine?.isRunning == true && deviceID == device { return }
         shutdown()
         let e = AVAudioEngine(); let input = e.inputNode
@@ -73,10 +73,7 @@ final class AudioCapture {
         try prepare(device: device)
         lock.lock(); converter?.reset(); self.sink = sink; accepting = true; lock.unlock()
     }
-    func stop(warm: Bool) {
-        lock.lock(); accepting = false; sink = nil; lock.unlock()
-        if !warm { shutdown() }
-    }
+    func stop() { shutdown() }
     func shutdown() {
         lock.lock(); accepting = false; sink = nil; lock.unlock()
         if let observer { NotificationCenter.default.removeObserver(observer) }
